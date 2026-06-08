@@ -60,3 +60,25 @@ func currentDatabase(ctx context.Context, db *sql.DB) (string, error) {
 	}
 	return dbName.String, nil
 }
+
+func listUsernames(ctx context.Context, db *sql.DB) ([]string, error) {
+	rows, err := db.QueryContext(ctx, "SELECT username FROM `user` ORDER BY username")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	usernames := make([]string, 0)
+	for rows.Next() {
+		var username string
+		if err := rows.Scan(&username); err != nil {
+			return nil, err
+		}
+		usernames = append(usernames, username)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return usernames, nil
+}

@@ -120,10 +120,32 @@ docker run --rm -p 8989:8989 \
 curl http://localhost:8989/
 curl http://localhost:8989/healthz
 curl http://localhost:8989/api/v1/mysql
+curl http://localhost:8989/api/v1/users
 curl "http://localhost:8989/api/v1/hello?name=Tom"
 ```
 
-示例响应：
+`GET /api/v1/users` 会查询当前服务所连接 MySQL 库里的 `user` 表：
+
+```sql
+SELECT username FROM `user` ORDER BY username;
+```
+
+用户查询示例响应：
+
+```json
+{
+  "code": 200,
+  "message": "ok",
+  "data": {
+    "service": "api",
+    "mysql_db": "api",
+    "usernames": ["alice", "bob"]
+  },
+  "timestamp": 1780911600
+}
+```
+
+Hello 接口示例响应：
 
 ```json
 {

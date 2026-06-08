@@ -68,6 +68,28 @@ func TestNotFoundReturnsJSON(t *testing.T) {
 	}
 }
 
+func TestUsersRequiresMySQLConnection(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/users", nil)
+	rec := httptest.NewRecorder()
+
+	newRouter(testApplication()).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status code = %d, want %d", rec.Code, http.StatusServiceUnavailable)
+	}
+
+	var body struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if body.Code != http.StatusServiceUnavailable || body.Message != "mysql is not connected" {
+		t.Fatalf("response = %+v, want mysql not connected", body)
+	}
+}
+
 func TestConfigDBMustMatchServiceName(t *testing.T) {
 	cfg := config{
 		MySQL: mysqlConfig{

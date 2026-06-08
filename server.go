@@ -32,6 +32,7 @@ func newRouter(app *application) http.Handler {
 	mux.HandleFunc("/healthz", app.handleHealthz)
 	mux.HandleFunc("/api/v1/hello", app.handleHello)
 	mux.HandleFunc("/api/v1/mysql", app.handleMySQL)
+	mux.HandleFunc("/api/v1/users", app.handleUsers)
 	return mux
 }
 
@@ -60,6 +61,7 @@ func (app *application) handleIndex(w http.ResponseWriter, r *http.Request) {
 				"GET /healthz",
 				"GET /api/v1/hello?name=Tom",
 				"GET /api/v1/mysql",
+				"GET /api/v1/users",
 			},
 		},
 		Timestamp: time.Now().Unix(),
@@ -163,6 +165,46 @@ func (app *application) handleMySQL(w http.ResponseWriter, r *http.Request) {
 		Data: map[string]string{
 			"service":  app.serviceName,
 			"mysql_db": dbName,
+		},
+		Timestamp: time.Now().Unix(),
+	})
+}
+
+func (app *application) handleUsers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+	if app.db == nil {
+		writeJSON(w, http.StatusServiceUnavailable, response{
+			Code:      http.StatusServiceUnavailable,
+			Message:   "mysql is not connected",
+			Timestamp: time.Now().Unix(),
+		})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	defer cancel()
+
+	usernames, err := listUsernames(ctx, app.db)
+	if err != nil {
+		writeJSON(w, http.StatusServiceUnavailable, response{
+			Code:      http.StatusServiceUnavailable,
+			Message:   "mysql query failed",
+			Data:      map[string]string{"error": err.Error()},
+			Timestamp: time.Now().Unix(),
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, response{
+		Code:    http.StatusOK,
+		Message: "ok",
+		Data: map[string]interface{}{
+			"service":   app.serviceName,
+			"mysql_db":  app.dbName,
+			"usernames": usernames,
 		},
 		Timestamp: time.Now().Unix(),
 	})
