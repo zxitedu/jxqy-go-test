@@ -64,10 +64,22 @@ PORT=9000 ./api server -c settings.dev.yml
 docker build \
   --build-arg SERVICE_NAME=api \
   --build-arg CMD_PATH=. \
+  --build-arg MYSQL_HOST=host.docker.internal \
+  --build-arg MYSQL_PORT=3306 \
+  --build-arg MYSQL_USER=root \
+  --build-arg MYSQL_PASSWORD=secret \
   -t jxqy-api .
 ```
 
+构建时会根据 `settings.dev.yml.tpl` 生成 `/app/config/settings.dev.yml` 并打包进镜像。`MYSQL_DB` 默认等于 `SERVICE_NAME`，所以 `SERVICE_NAME=api` 会生成 `mysql.db: api`。
+
 运行：
+
+```bash
+docker run --rm -p 8989:8989 jxqy-api
+```
+
+如果运行时需要覆盖镜像里的配置，可以传完整的 `MYSQL_*` 环境变量，启动脚本会重新生成配置：
 
 ```bash
 docker run --rm -p 8989:8989 \
@@ -79,7 +91,9 @@ docker run --rm -p 8989:8989 \
   jxqy-api
 ```
 
-构建 `admin` 时把 `SERVICE_NAME` 和 `MYSQL_DB` 都改成 `admin`。
+构建 `admin` 时把 `SERVICE_NAME` 改成 `admin`，镜像里的 `mysql.db` 会自动生成成 `admin`。
+
+注意：把 `settings.dev.yml` 打进镜像会把数据库密码也固化进去，这种方式更适合开发或测试镜像。
 
 ## 接口
 

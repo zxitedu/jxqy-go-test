@@ -30,6 +30,11 @@ RUN apk add --no-cache ca-certificates tzdata gettext \
 WORKDIR /app
 
 ARG SERVICE_NAME
+ARG MYSQL_HOST
+ARG MYSQL_PORT
+ARG MYSQL_DB
+ARG MYSQL_USER
+ARG MYSQL_PASSWORD
 
 ENV SERVICE_NAME=${SERVICE_NAME}
 ENV CONFIG_TEMPLATE=/app/config/settings.dev.yml.tpl
@@ -40,7 +45,19 @@ COPY --from=builder /out/${SERVICE_NAME} /app/${SERVICE_NAME}
 COPY settings.dev.yml.tpl /app/config/settings.dev.yml.tpl
 COPY entrypoint.sh /app/entrypoint.sh
 
-RUN chmod +x /app/entrypoint.sh \
+RUN test -n "${SERVICE_NAME}" \
+    && : "${MYSQL_HOST:?MYSQL_HOST build arg is required}" \
+    && : "${MYSQL_PORT:?MYSQL_PORT build arg is required}" \
+    && : "${MYSQL_USER:?MYSQL_USER build arg is required}" \
+    && : "${MYSQL_PASSWORD:?MYSQL_PASSWORD build arg is required}" \
+    && export MYSQL_DB="${MYSQL_DB:-${SERVICE_NAME}}" \
+    && if [ "${MYSQL_DB}" != "${SERVICE_NAME}" ]; then \
+         echo "ERROR: MYSQL_DB must equal SERVICE_NAME (${SERVICE_NAME})"; \
+         exit 1; \
+       fi \
+    && export MYSQL_HOST MYSQL_PORT MYSQL_USER MYSQL_PASSWORD \
+    && envsubst < "${CONFIG_TEMPLATE}" > "${CONFIG_FILE}" \
+    && chmod +x /app/entrypoint.sh \
     && chmod +x /app/${SERVICE_NAME}
 
 EXPOSE 8989
