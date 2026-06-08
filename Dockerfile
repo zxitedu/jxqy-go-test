@@ -1,5 +1,5 @@
 # ========= 1. build stage =========
-FROM golang:1.25-alpine AS builder
+FROM swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/golang:1.25-alpine AS builder
 
 WORKDIR /app
 
@@ -22,7 +22,7 @@ RUN test -n "${SERVICE_NAME}" \
        -o /out/${SERVICE_NAME} ${CMD_PATH}
 
 # ========= 2. runtime stage =========
-FROM alpine:3.18
+FROM swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/library/alpine:3.22
 
 RUN apk add --no-cache ca-certificates tzdata gettext \
     && update-ca-certificates
