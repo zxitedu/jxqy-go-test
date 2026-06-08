@@ -35,10 +35,12 @@ ARG MYSQL_PORT
 ARG MYSQL_DB
 ARG MYSQL_USER
 ARG MYSQL_PASSWORD
+ARG SERVICE_PORT=8989
 
 ENV SERVICE_NAME=${SERVICE_NAME}
 ENV CONFIG_TEMPLATE=/app/config/settings.dev.yml.tpl
 ENV CONFIG_FILE=/app/config/settings.dev.yml
+ENV PORT=${SERVICE_PORT}
 ENV TZ=Asia/Shanghai
 
 COPY --from=builder /out/${SERVICE_NAME} /app/${SERVICE_NAME}
@@ -46,6 +48,7 @@ COPY settings.dev.yml.tpl /app/config/settings.dev.yml.tpl
 COPY entrypoint.sh /app/entrypoint.sh
 
 RUN test -n "${SERVICE_NAME}" \
+    && : "${SERVICE_PORT:?SERVICE_PORT build arg is required}" \
     && : "${MYSQL_HOST:?MYSQL_HOST build arg is required}" \
     && : "${MYSQL_PORT:?MYSQL_PORT build arg is required}" \
     && : "${MYSQL_USER:?MYSQL_USER build arg is required}" \
@@ -60,7 +63,7 @@ RUN test -n "${SERVICE_NAME}" \
     && chmod +x /app/entrypoint.sh \
     && chmod +x /app/${SERVICE_NAME}
 
-EXPOSE 8989
+EXPOSE ${PORT}
 
 ENTRYPOINT ["/app/entrypoint.sh"]
 
