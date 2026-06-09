@@ -8,15 +8,27 @@ import (
 )
 
 type config struct {
-	MySQL mysqlConfig `yaml:"mysql"`
+	Settings settingsConfig `yaml:"settings"`
 }
 
-type mysqlConfig struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	DB       string `yaml:"db"`
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
+type settingsConfig struct {
+	Application applicationConfig `yaml:"application"`
+	Database    databaseConfig    `yaml:"database"`
+	Gen         genConfig         `yaml:"gen"`
+}
+
+type applicationConfig struct {
+	Name string `yaml:"name"`
+	Port int    `yaml:"port"`
+}
+
+type databaseConfig struct {
+	Driver string `yaml:"driver"`
+	Source string `yaml:"source"`
+}
+
+type genConfig struct {
+	DBName string `yaml:"dbname"`
 }
 
 func loadConfig(path string) (config, error) {
@@ -33,26 +45,39 @@ func loadConfig(path string) (config, error) {
 }
 
 func (cfg config) validate(serviceName string) error {
-	mysql := cfg.MySQL
+	app := cfg.Settings.Application
+	db := cfg.Settings.Database
+	gen := cfg.Settings.Gen
 	expectedDB := serviceDatabaseName(serviceName)
 
-	if mysql.Host == "" {
-		return fmt.Errorf("mysql.host is required")
+	if app.Name == "" {
+		return fmt.Errorf("settings.application.name is required")
 	}
-	if mysql.Port <= 0 || mysql.Port > 65535 {
-		return fmt.Errorf("mysql.port must be between 1 and 65535")
+	if app.Name != serviceName {
+		return fmt.Errorf("settings.application.name must match executable name: got %q, want %q", app.Name, serviceName)
 	}
-	if mysql.DB == "" {
-		return fmt.Errorf("mysql.db is required")
+	if app.Port <= 0 || app.Port > 65535 {
+		return fmt.Errorf("settings.application.port must be between 1 and 65535")
 	}
-	if mysql.DB != expectedDB {
-		return fmt.Errorf("mysql.db must match service database name: got %q, want %q", mysql.DB, expectedDB)
+	if db.Driver == "" {
+		return fmt.Errorf("settings.database.driver is required")
 	}
-	if mysql.User == "" {
-		return fmt.Errorf("mysql.user is required")
+	if db.Driver != "mysql" {
+		return fmt.Errorf("settings.database.driver must be mysql: got %q", db.Driver)
 	}
-	if mysql.Password == "" {
-		return fmt.Errorf("mysql.password is required")
+	if db.Source == "" {
+		return fmt.Errorf("settings.database.source is required")
+	}
+
+	sourceDB, err := mysqlDatabaseName(db.Source)
+	if err != nil {
+		return fmt.Errorf("settings.database.source is invalid: %w", err)
+	}
+	if sourceDB != expectedDB {
+		return fmt.Errorf("settings.database.source db must match service database name: got %q, want %q", sourceDB, expectedDB)
+	}
+	if gen.DBName != "" && gen.DBName != expectedDB {
+		return fmt.Errorf("settings.gen.dbname must match service database name: got %q, want %q", gen.DBName, expectedDB)
 	}
 
 	return nil

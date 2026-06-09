@@ -9,26 +9,26 @@ import (
 	mysqlDriver "github.com/go-sql-driver/mysql"
 )
 
-func connectMySQL(cfg mysqlConfig, timeout time.Duration) (*sql.DB, string, error) {
-	driverConfig := mysqlDriver.NewConfig()
-	driverConfig.User = cfg.User
-	driverConfig.Passwd = cfg.Password
-	driverConfig.Net = "tcp"
-	driverConfig.Addr = fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
-	driverConfig.DBName = cfg.DB
-	driverConfig.Params = map[string]string{
-		"charset":   "utf8mb4",
-		"parseTime": "true",
-		"loc":       "Local",
-	}
-	driverConfig.Timeout = timeout
-	driverConfig.ReadTimeout = timeout
-	driverConfig.WriteTimeout = timeout
-
-	db, err := sql.Open("mysql", driverConfig.FormatDSN())
+func connectMySQL(cfg databaseConfig, timeout time.Duration) (*sql.DB, string, error) {
+	driverConfig, err := mysqlDriver.ParseDSN(cfg.Source)
 	if err != nil {
 		return nil, "", err
 	}
+	if driverConfig.Timeout == 0 {
+		driverConfig.Timeout = timeout
+	}
+	if driverConfig.ReadTimeout == 0 {
+		driverConfig.ReadTimeout = timeout
+	}
+	if driverConfig.WriteTimeout == 0 {
+		driverConfig.WriteTimeout = timeout
+	}
+
+	db, err := sql.Open(cfg.Driver, driverConfig.FormatDSN())
+	if err != nil {
+		return nil, "", err
+	}
+
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(30 * time.Minute)
@@ -48,6 +48,17 @@ func connectMySQL(cfg mysqlConfig, timeout time.Duration) (*sql.DB, string, erro
 	}
 
 	return db, dbName, nil
+}
+
+func mysqlDatabaseName(source string) (string, error) {
+	driverConfig, err := mysqlDriver.ParseDSN(source)
+	if err != nil {
+		return "", err
+	}
+	if driverConfig.DBName == "" {
+		return "", fmt.Errorf("database name is empty")
+	}
+	return driverConfig.DBName, nil
 }
 
 func currentDatabase(ctx context.Context, db *sql.DB) (string, error) {

@@ -34,7 +34,7 @@ func main() {
 		log.Fatalf("invalid config: %v", err)
 	}
 
-	db, dbName, err := connectMySQL(cfg.MySQL, 10*time.Second)
+	db, dbName, err := connectMySQL(cfg.Settings.Database, 10*time.Second)
 	if err != nil {
 		log.Fatalf("mysql connect failed: %v", err)
 	}

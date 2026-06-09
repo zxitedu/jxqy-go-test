@@ -92,12 +92,18 @@ func TestUsersRequiresMySQLConnection(t *testing.T) {
 
 func TestConfigDBMustMatchServiceName(t *testing.T) {
 	cfg := config{
-		MySQL: mysqlConfig{
-			Host:     "127.0.0.1",
-			Port:     3306,
-			DB:       "admin",
-			User:     "root",
-			Password: "secret",
+		Settings: settingsConfig{
+			Application: applicationConfig{
+				Name: "api",
+				Port: 8989,
+			},
+			Database: databaseConfig{
+				Driver: "mysql",
+				Source: "root:secret@tcp(mysql:3306)/admindb?charset=utf8mb4&parseTime=True&loc=Local&timeout=1000ms",
+			},
+			Gen: genConfig{
+				DBName: "admindb",
+			},
 		},
 	}
 
@@ -105,9 +111,20 @@ func TestConfigDBMustMatchServiceName(t *testing.T) {
 		t.Fatal("validate returned nil, want mysql db mismatch error")
 	}
 
-	cfg.MySQL.DB = "apidb"
+	cfg.Settings.Database.Source = "root:secret@tcp(mysql:3306)/apidb?charset=utf8mb4&parseTime=True&loc=Local&timeout=1000ms"
+	cfg.Settings.Gen.DBName = "apidb"
 	if err := cfg.validate("api"); err != nil {
 		t.Fatalf("validate returned error: %v", err)
+	}
+}
+
+func TestMySQLDatabaseName(t *testing.T) {
+	dbName, err := mysqlDatabaseName("root:secret@tcp(mysql:3306)/house_admindb?charset=utf8mb4&parseTime=True&loc=Local&timeout=1000ms")
+	if err != nil {
+		t.Fatalf("mysqlDatabaseName returned error: %v", err)
+	}
+	if dbName != "house_admindb" {
+		t.Fatalf("dbName = %q, want house_admindb", dbName)
 	}
 }
 
