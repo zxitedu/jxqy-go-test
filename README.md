@@ -4,7 +4,7 @@
 
 ## 规则
 
-二进制文件名就是服务名，也是必须连接的 MySQL 库名。
+二进制文件名就是服务名，必须连接的 MySQL 库名是服务名后面加 `db`。
 
 例如：
 
@@ -13,7 +13,7 @@ go build -o api .
 ./api server -c settings.dev.yml
 ```
 
-上面的 `settings.dev.yml` 里必须配置 `mysql.db: api`，否则进程会直接退出。`admin` 同理必须连接 `admin` 库。
+上面的 `settings.dev.yml` 里必须配置 `mysql.db: apidb`，否则进程会直接退出。`admin` 同理必须连接 `admindb` 库，`house_admin` 必须连接 `house_admindb` 库。
 
 ## 配置
 
@@ -29,7 +29,7 @@ settings.dev.yml.tpl
 mysql:
   host: "127.0.0.1"
   port: 3306
-  db: "api"
+  db: "apidb"
   user: "root"
   password: "secret"
 ```
@@ -39,8 +39,8 @@ mysql:
 先准备 MySQL，并创建对应库：
 
 ```sql
-CREATE DATABASE api DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE DATABASE admin DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE apidb DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE admindb DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 构建并启动 `api`：
@@ -72,7 +72,7 @@ docker build \
   -t jxqy-api .
 ```
 
-构建时会根据 `settings.dev.yml.tpl` 生成 `/app/config/settings.dev.yml` 并打包进镜像。`MYSQL_DB` 默认等于 `SERVICE_NAME`，所以 `SERVICE_NAME=api` 会生成 `mysql.db: api`。
+构建时会根据 `settings.dev.yml.tpl` 生成 `/app/config/settings.dev.yml` 并打包进镜像。`MYSQL_DB` 默认等于 `SERVICE_NAME + db`，所以 `SERVICE_NAME=api` 会生成 `mysql.db: apidb`。
 
 镜像的 `EXPOSE` 端口由 `SERVICE_PORT` 控制，默认是 `8989`。这个值也会写入镜像的 `PORT` 环境变量，服务启动后默认监听同一个端口。
 
@@ -104,13 +104,13 @@ docker run --rm -p 9000:9000 jxqy-api
 docker run --rm -p 8989:8989 \
   -e MYSQL_HOST=host.docker.internal \
   -e MYSQL_PORT=3306 \
-  -e MYSQL_DB=api \
+  -e MYSQL_DB=apidb \
   -e MYSQL_USER=root \
   -e MYSQL_PASSWORD=secret \
   jxqy-api
 ```
 
-构建 `admin` 时把 `SERVICE_NAME` 改成 `admin`，镜像里的 `mysql.db` 会自动生成成 `admin`。
+构建 `admin` 时把 `SERVICE_NAME` 改成 `admin`，镜像里的 `mysql.db` 会自动生成成 `admindb`。
 
 注意：把 `settings.dev.yml` 打进镜像会把数据库密码也固化进去，这种方式更适合开发或测试镜像。
 
@@ -138,7 +138,7 @@ SELECT username FROM `user` ORDER BY username;
   "message": "ok",
   "data": {
     "service": "api",
-    "mysql_db": "api",
+    "mysql_db": "apidb",
     "usernames": ["alice", "bob"]
   },
   "timestamp": 1780911600
@@ -155,7 +155,7 @@ Hello 接口示例响应：
     "name": "Tom",
     "message": "Hello, Tom",
     "service": "api",
-    "mysql_db": "api"
+    "mysql_db": "apidb"
   },
   "timestamp": 1780911600
 }

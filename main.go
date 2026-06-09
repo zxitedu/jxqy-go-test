@@ -40,8 +40,9 @@ func main() {
 	}
 	defer db.Close()
 
-	if dbName != serviceName {
-		log.Fatalf("mysql database mismatch: connected=%q expected=%q", dbName, serviceName)
+	expectedDB := serviceDatabaseName(serviceName)
+	if dbName != expectedDB {
+		log.Fatalf("mysql database mismatch: connected=%q expected=%q", dbName, expectedDB)
 	}
 
 	app := &application{

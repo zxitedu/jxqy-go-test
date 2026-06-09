@@ -34,6 +34,7 @@ func loadConfig(path string) (config, error) {
 
 func (cfg config) validate(serviceName string) error {
 	mysql := cfg.MySQL
+	expectedDB := serviceDatabaseName(serviceName)
 
 	if mysql.Host == "" {
 		return fmt.Errorf("mysql.host is required")
@@ -44,8 +45,8 @@ func (cfg config) validate(serviceName string) error {
 	if mysql.DB == "" {
 		return fmt.Errorf("mysql.db is required")
 	}
-	if mysql.DB != serviceName {
-		return fmt.Errorf("mysql.db must match executable name: got %q, want %q", mysql.DB, serviceName)
+	if mysql.DB != expectedDB {
+		return fmt.Errorf("mysql.db must match service database name: got %q, want %q", mysql.DB, expectedDB)
 	}
 	if mysql.User == "" {
 		return fmt.Errorf("mysql.user is required")
@@ -55,4 +56,8 @@ func (cfg config) validate(serviceName string) error {
 	}
 
 	return nil
+}
+
+func serviceDatabaseName(serviceName string) string {
+	return serviceName + "db"
 }

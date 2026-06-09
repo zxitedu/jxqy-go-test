@@ -32,8 +32,9 @@ if [ "${should_render_config}" = "true" ]; then
   : "${MYSQL_USER:?MYSQL_USER is required}"
   : "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}"
 
-  if [ "${MYSQL_DB}" != "${SERVICE_NAME}" ]; then
-    echo "ERROR: MYSQL_DB must equal SERVICE_NAME (${SERVICE_NAME})"
+  expected_mysql_db="${SERVICE_NAME}db"
+  if [ "${MYSQL_DB}" != "${expected_mysql_db}" ]; then
+    echo "ERROR: MYSQL_DB must equal SERVICE_NAME + db (${expected_mysql_db})"
     exit 1
   fi
 

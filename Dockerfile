@@ -53,9 +53,10 @@ RUN test -n "${SERVICE_NAME}" \
     && : "${MYSQL_PORT:?MYSQL_PORT build arg is required}" \
     && : "${MYSQL_USER:?MYSQL_USER build arg is required}" \
     && : "${MYSQL_PASSWORD:?MYSQL_PASSWORD build arg is required}" \
-    && export MYSQL_DB="${MYSQL_DB:-${SERVICE_NAME}}" \
-    && if [ "${MYSQL_DB}" != "${SERVICE_NAME}" ]; then \
-         echo "ERROR: MYSQL_DB must equal SERVICE_NAME (${SERVICE_NAME})"; \
+    && expected_mysql_db="${SERVICE_NAME}db" \
+    && export MYSQL_DB="${MYSQL_DB:-${expected_mysql_db}}" \
+    && if [ "${MYSQL_DB}" != "${expected_mysql_db}" ]; then \
+         echo "ERROR: MYSQL_DB must equal SERVICE_NAME + db (${expected_mysql_db})"; \
          exit 1; \
        fi \
     && export MYSQL_HOST MYSQL_PORT MYSQL_USER MYSQL_PASSWORD \

@@ -41,8 +41,8 @@ func TestHelloReturnsJSON(t *testing.T) {
 	if body.Data.Name != "Tom" || body.Data.Message != "Hello, Tom" {
 		t.Fatalf("data = %+v, want hello Tom", body.Data)
 	}
-	if body.Data.Service != "api" || body.Data.MySQLDB != "api" {
-		t.Fatalf("data = %+v, want api service/mysql db", body.Data)
+	if body.Data.Service != "api" || body.Data.MySQLDB != "apidb" {
+		t.Fatalf("data = %+v, want api service/apidb mysql db", body.Data)
 	}
 }
 
@@ -105,9 +105,23 @@ func TestConfigDBMustMatchServiceName(t *testing.T) {
 		t.Fatal("validate returned nil, want mysql db mismatch error")
 	}
 
-	cfg.MySQL.DB = "api"
+	cfg.MySQL.DB = "apidb"
 	if err := cfg.validate("api"); err != nil {
 		t.Fatalf("validate returned error: %v", err)
+	}
+}
+
+func TestServiceDatabaseName(t *testing.T) {
+	tests := map[string]string{
+		"api":         "apidb",
+		"admin":       "admindb",
+		"house_admin": "house_admindb",
+	}
+
+	for serviceName, want := range tests {
+		if got := serviceDatabaseName(serviceName); got != want {
+			t.Fatalf("serviceDatabaseName(%q) = %q, want %q", serviceName, got, want)
+		}
 	}
 }
 
@@ -124,6 +138,6 @@ func TestParseServerOptionsAcceptsDockerCMD(t *testing.T) {
 func testApplication() *application {
 	return &application{
 		serviceName: "api",
-		dbName:      "api",
+		dbName:      "apidb",
 	}
 }
