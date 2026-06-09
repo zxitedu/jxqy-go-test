@@ -36,8 +36,8 @@ COPY settings.dev.yml.tpl /tmp/settings.dev.yml.tpl
 
 RUN test -n "${SERVICE_NAME}" \
     && : "${MYSQL_HOST:?MYSQL_HOST build arg is required}" \
-    && : "${MYSQL_PORT:?MYSQL_PORT build arg is required}" \
-    && case "${MYSQL_PORT}" in (*[!0-9]*|'') echo "ERROR: MYSQL_PORT must be a number"; exit 1;; esac \
+    && if [ -z "${MYSQL_PORT}" ] || [ "${MYSQL_PORT}" = '${MYSQL_PORT}' ]; then MYSQL_PORT=3306; fi \
+    && case "${MYSQL_PORT}" in (*[!0-9]*|'') echo "ERROR: MYSQL_PORT must be a number: ${MYSQL_PORT}"; exit 1;; esac \
     && : "${MYSQL_USER:?MYSQL_USER build arg is required}" \
     && : "${MYSQL_PASSWORD:?MYSQL_PASSWORD build arg is required}" \
     && : "${JWT_SECRET:?JWT_SECRET build arg is required}" \
